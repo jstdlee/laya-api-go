@@ -1,0 +1,46 @@
+{
+  "api": {
+    "concurrency": 1,
+    "endpoint": "http://127.0.0.1:8012/v1/systemone",
+    "model": "typed-decisions"
+  },
+  "dataset": {
+    "name": "LocalLLaMA/typed-decisions",
+    "config": "all",
+    "split": "test",
+    "offset": 0,
+    "rows": 400,
+    "rows_total": 400
+  },
+  "decisions": {
+    "total": 2000,
+    "correct": 1493,
+    "accuracy": 0.7465,
+    "exact_rows": 105,
+    "row_accuracy": 0.2625
+  },
+  "latency_ms": {
+    "count": 400,
+    "min": 41.065,
+    "mean": 79.1685525,
+    "p50": 81.364,
+    "p95": 121.867,
+    "p99": 153.054,
+    "max": 180.86
+  },
+  "elapsed_ms": 31716.241,
+  "throughput": {
+    "requests_per_second": 12.61183501424523,
+    "decisions_per_second": 63.05917507122615
+  },
+  "errors": {
+    "requests": 0,
+    "first": ""
+  },
+  "recorded_at": "2026-09-22T15:39:55Z",
+  "notes": [
+    "Warm persistent worker; model load excluded from the 400-row timing run.",
+    "Each dataset row contains five decisions.",
+    "Decision agreement compares choice labels, score probability argmax labels, and noul threshold labels against the dataset gold labels."
+  ]
+}

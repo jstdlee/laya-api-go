@@ -21,6 +21,10 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# local API build tooling and generated binary
+.tools/
+api/laya-api
 .DS_Store
 .env
 .pypirc
