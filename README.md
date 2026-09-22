@@ -1,3 +1,77 @@
+## Laya API
+
+`laya-api` is a Go HTTP front end for the Python Laya runtime. Go owns the public REST listener
+and request validation; one persistent Python worker owns the loaded `laya.Router` and communicates
+over a private length-prefixed JSON RPC Unix socket.
+
+The worker uses Laya's `transformers`/PyTorch runtime and safetensor checkpoints. It does not use
+vLLM. With the default preload list, the English and multilingual checkpoints are loaded once at
+startup and remain resident for the life of the worker.
+
+### Build and run
+
+```bash
+cd ~/dev/laya/api
+CGO_ENABLED=0 ../.tools/go1.27.1/bin/go build -trimpath -ldflags='-s -w' -o laya-api ./cmd/laya-api
+cd ~/dev/laya
+api/laya-api --host 127.0.0.1 --port 8011
+```
+
+The API starts listening immediately. During model download/preload, `GET /health` returns `503`;
+it changes to `200` after the worker is ready.
+
+### REST endpoint
+
+`POST http://HOST:PORT/v1/systemone` accepts the djev/TypeSafe-style request envelope. `state` may
+be a string, object, or array. `questions` is an ordered JSON object whose values support `choice`,
+`score`, and `noul` primitives.
+
+```json
+{
+  "model": "auto",
+  "state": {"body": "I was charged twice; please refund the duplicate."},
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": {"billing": "payments and refunds", "technical": "bugs and outages"}
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How urgent is this?",
+      "criteria": ["not urgent", "soon", "critical"]
+    },
+    "churn_risk": {
+      "type": "noul",
+      "instructions": "Does the user threaten to leave?"
+    }
+  }
+}
+```
+
+The response contains `model`, `answers`, `usage`, and additive `routing` metadata. Internal Laya
+`action` metadata is removed from answers. Use `--no-spawn-worker` to connect the Go API to a
+worker started separately with `uv run --project ~/dev/laya python worker/laya_worker.py`.
+
+### API benchmark
+
+Using the public [`LocalLLaMA/typed-decisions`](https://huggingface.co/datasets/LocalLLaMA/typed-decisions)
+test split against the local Go API and the persistent `typed-decisions` model:
+
+| Measurement | Result |
+|---|---:|
+| Decision agreement | 1,493 / 2,000 (74.65%) |
+| Mean request latency | 79.17 ms |
+| p50 / p95 latency | 81.36 / 121.87 ms |
+| Throughput | 12.61 requests/s; 63.06 decisions/s |
+| API errors | 0 / 400 |
+
+Exact record: [`api/benchmarks/typed-decisions-test-2026-09-22.json`](api/benchmarks/typed-decisions-test-2026-09-22.json).
+
+---
+
+## Original Laya Python SDK
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/NandhaKishorM/laya/main/assets/logo-lockup-dark.png" />

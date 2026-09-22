@@ -34,6 +34,13 @@ func NewServer(predictor rpc.Predictor, apiKey string, requestLimit int, timeout
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	switch r.URL.Path {
 	case "/health":
 		if r.Method != http.MethodGet {

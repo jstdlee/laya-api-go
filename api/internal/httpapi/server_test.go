@@ -111,6 +111,33 @@ func TestHealthAndRoutingErrors(t *testing.T) {
 	}
 }
 
+func TestCORSPreflight(t *testing.T) {
+	server := httptest.NewServer(NewServer(&fakePredictor{}, "", 1<<20, time.Second))
+	defer server.Close()
+
+	req, err := http.NewRequest(http.MethodOptions, server.URL+"/v1/systemone", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Origin", "http://127.0.0.1:8011")
+	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	req.Header.Set("Access-Control-Request-Headers", "content-type")
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d", response.StatusCode, http.StatusNoContent)
+	}
+	if got := response.Header.Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("allow-origin = %q", got)
+	}
+	if got := response.Header.Get("Access-Control-Allow-Headers"); got != "Content-Type, Authorization" {
+		t.Fatalf("allow-headers = %q", got)
+	}
+}
+
 func TestHealthReportsWorkerUnavailable(t *testing.T) {
 	predictor := &fakeReadyPredictor{readyErr: &rpc.RPCError{Status: 503, Type: "worker_unavailable", Message: "not ready"}}
 	server := httptest.NewServer(NewServer(predictor, "", 1<<20, time.Second))
